@@ -1,5 +1,13 @@
 
-const { normalizeUrl } = require('./crawl');
+const { normalizeUrl, getURLsFromHTML } = require('./crawl');
 
-const input = 'https://bj.dev/blog';
-console.log(normalizeUrl(input));
+const inputHTMLBody = `
+<html>
+    <body>
+        <a href='https://bj.dev/blog>
+            BJ.dev
+        </a>
+    </body>
+</html>
+`
+getURLsFromHTML(inputHTMLBody, "");
