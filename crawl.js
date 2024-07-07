@@ -5,30 +5,47 @@ const { JSDOM } = require("jsdom");
  *
  * @param {String} currentPage
  */
-async function crawlPage(currentPage) {
-    try {
-        const newUrl = new URL(currentPage);
-        if (newUrl){
-            const response = await fetch(newUrl);
-            if (response.status > 399){
-                console.log(`Error: crawling ${newUrl} due to status code ${response.status}`)
-                return;
-            }
-            const responseType = response.headers('Content-Type');
-            if (!responseType.includes('text/html')){
-                console.log(`page not an html file ${currentPage} is ${contentType}`)
-                return;
-            }
-            const data = await response.text();
-            console.log(data);
-        }
+async function crawlPage(baseUrl, currentPage, pages) {
+  const baseUrlObj = new URL(baseUrl);
+  const currentUrl = new URL(currentPage);
 
-    }catch(err){
-        console.log(`Error fetching: ${currentPage}. ${err.message}`);
+  if (baseUrlObj.hostname !== currentUrl.hostname) {
+    return pages;
+  }
+  const normalizeCurrentUrl = normalizeUrl(currentUrl);
+  if (pages[normalizeCurrentUrl] > 0) {
+    pages[normalizeCurrentUrl]++;
+    return pages;
+  }
+
+  pages[normalizeCurrentUrl] = 1;
+  try {
+    console.log("actively crawling " + currentPage);
+    if (currentUrl) {
+      const response = await fetch(currentUrl);
+      if (response.status > 399) {
+        console.log(
+          `Error: crawling ${currentUrl} due to status code ${response.status}`
+        );
+        return;
+      }
+      const responseType = response.headers.get("Content-Type");
+      if (!responseType.includes("text/html")) {
+        console.log(`page not an html file ${currentPage} is ${contentType}`);
+        return;
+      }
+      const htmlBody = await response.text();
+
+      const nextUrls = getURLsFromHTML(htmlBody, baseUrl);
+
+      for (let nextUrl of nextUrls) {
+        pages = await crawlPage(baseUrl, nextUrl, pages);
+      }
     }
-    
-
-
+  } catch (err) {
+    console.log(`Error fetching: ${currentPage}. ${err.message}`);
+  }
+  return pages;
 }
 
 /**
