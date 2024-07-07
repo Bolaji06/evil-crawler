@@ -1,4 +1,35 @@
+const { contentType } = require("express/lib/response");
 const { JSDOM } = require("jsdom");
+
+/**
+ *
+ * @param {String} currentPage
+ */
+async function crawlPage(currentPage) {
+    try {
+        const newUrl = new URL(currentPage);
+        if (newUrl){
+            const response = await fetch(newUrl);
+            if (response.status > 399){
+                console.log(`Error: crawling ${newUrl} due to status code ${response.status}`)
+                return;
+            }
+            const responseType = response.headers('Content-Type');
+            if (!responseType.includes('text/html')){
+                console.log(`page not an html file ${currentPage} is ${contentType}`)
+                return;
+            }
+            const data = await response.text();
+            console.log(data);
+        }
+
+    }catch(err){
+        console.log(`Error fetching: ${currentPage}. ${err.message}`);
+    }
+    
+
+
+}
 
 /**
  *
@@ -25,7 +56,7 @@ function getURLsFromHTML(htmlBody, baseUrl) {
         console.log(err.message);
       }
     } else {
-        //absolute url
+      //absolute url
       try {
         const objUrl = new URL(url.href);
         if (objUrl) {
@@ -57,4 +88,5 @@ function normalizeUrl(urlString) {
 module.exports = {
   normalizeUrl,
   getURLsFromHTML,
+  crawlPage,
 };
